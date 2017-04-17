@@ -108,16 +108,17 @@ func main() {
 				result, err := gosnmp.Default.BulkWalkAll(oid)
 				if err != nil {
 					log.WithFields(log.Fields{
-						"oid": oid,
-						"err": err,
+						"iteration": iteration,
+						"oid":       oid,
+						"err":       err,
 					}).Warn("Couldn't walk SNMP!")
 				}
 				results = append(results, result...)
 			}
 			// how long did the SNMP querying take?
 			log.WithFields(log.Fields{
-				"Iteration": iteration,
-				"Duration":  timeStart.Sub(time.Now()),
+				"iteration": iteration,
+				"duration":  timeStart.Sub(time.Now()),
 			}).Info("SNMP Collection Completed")
 
 			// reset the time to now monitor how long the DB work took
@@ -178,8 +179,8 @@ func main() {
 			}
 			// how long did the DB work take?
 			log.WithFields(log.Fields{
-				"Iteration": iteration,
-				"Duration":  timeStart.Sub(time.Now()),
+				"iteration": iteration,
+				"duration":  timeStart.Sub(time.Now()),
 			}).Info("Database Inserts Completed")
 
 		}(tick, iteration, dbStmt)
