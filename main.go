@@ -94,7 +94,7 @@ func main() {
 		// this is primarily useful in determining if the SNMP timeout/interval is wrong
 		iteration++
 		log.WithFields(log.Fields{
-			"iteration": iteration,
+			"Iteration": iteration,
 		}).Info("Starting new collection job")
 
 		// don't block
@@ -108,7 +108,7 @@ func main() {
 				result, err := gosnmp.Default.BulkWalkAll(oid)
 				if err != nil {
 					log.WithFields(log.Fields{
-						"iteration": iteration,
+						"Iteration": iteration,
 						"oid":       oid,
 						"err":       err,
 					}).Warn("Couldn't walk SNMP!")
@@ -117,7 +117,7 @@ func main() {
 			}
 			// how long did the SNMP querying take?
 			log.WithFields(log.Fields{
-				"iteration": iteration,
+				"Iteration": iteration,
 				"duration":  time.Now().Sub(timeStart),
 			}).Info("SNMP Collection Completed")
 
@@ -179,7 +179,7 @@ func main() {
 			}
 			// how long did the DB work take?
 			log.WithFields(log.Fields{
-				"iteration": iteration,
+				"Iteration": iteration,
 				"duration":  time.Now().Sub(timeStart),
 			}).Info("Database Inserts Completed")
 
