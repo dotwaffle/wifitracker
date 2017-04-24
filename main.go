@@ -101,6 +101,9 @@ func main() {
 		go func(tick time.Time, iteration int, dbStmt *sql.Stmt) {
 			// start counting for time statistics
 			timeStart := time.Now()
+			iterationLogger := log.WithFields(log.Fields{
+				"Iteration": iteration,
+			})
 
 			// get the data from the SNMP Target
 			var results []gosnmp.SnmpPDU
@@ -116,9 +119,8 @@ func main() {
 				results = append(results, result...)
 			}
 			// how long did the SNMP querying take?
-			log.WithFields(log.Fields{
-				"Iteration": iteration,
-				"duration":  time.Now().Sub(timeStart),
+			iterationLogger.WithFields(log.Fields{
+				"duration": time.Now().Sub(timeStart),
 			}).Info("SNMP Collection Completed")
 
 			// reset the time to now monitor how long the DB work took
@@ -170,7 +172,7 @@ func main() {
 			// now get all the stored clients and put them in the database
 			for _, data := range clients {
 				if _, err := dbStmt.Exec(data.apMAC, data.apName, data.clientIP, data.clientMAC, data.clientSSID, data.clientUser); err != nil {
-					log.WithFields(log.Fields{
+					iterationLogger.WithFields(log.Fields{
 						"dbField": *dbFile,
 						"err":     err,
 					}).Warn("WARNING: sql insert failed")
@@ -178,9 +180,8 @@ func main() {
 				}
 			}
 			// how long did the DB work take?
-			log.WithFields(log.Fields{
-				"Iteration": iteration,
-				"duration":  time.Now().Sub(timeStart),
+			iterationLogger.WithFields(log.Fields{
+				"duration": time.Now().Sub(timeStart),
 			}).Info("Database Inserts Completed")
 
 		}(tick, iteration, dbStmt)
