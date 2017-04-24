@@ -118,7 +118,7 @@ func main() {
 			// how long did the SNMP querying take?
 			log.WithFields(log.Fields{
 				"iteration": iteration,
-				"duration":  timeStart.Sub(time.Now()),
+				"duration":  time.Now().Sub(timeStart),
 			}).Info("SNMP Collection Completed")
 
 			// reset the time to now monitor how long the DB work took
@@ -180,7 +180,7 @@ func main() {
 			// how long did the DB work take?
 			log.WithFields(log.Fields{
 				"iteration": iteration,
-				"duration":  timeStart.Sub(time.Now()),
+				"duration":  time.Now().Sub(timeStart),
 			}).Info("Database Inserts Completed")
 
 		}(tick, iteration, dbStmt)
