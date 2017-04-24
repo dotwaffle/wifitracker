@@ -1,0 +1,31 @@
+memo = "6f5acf68a1974d5684ad9a3528d9521180727295297c3f093db3374015adeeac"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/Sirupsen/logrus"
+  packages = ["."]
+  revision = "10f801ebc38b33738c9d17d50860f484a0988ff5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  revision = "cf7286f069c3ef596efcc87781a4653a2e7607bd"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/soniah/gosnmp"
+  packages = ["."]
+  revision = "cfe685e0bca91d7bc4a95eab3d1faddf66b32e02"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "d212a1ef2de2f5d441c327b8f26cf3ea3ea9f265"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "ea9bcade75cb975a0b9738936568ab388b845617"
