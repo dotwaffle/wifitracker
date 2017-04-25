@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"encoding/hex"
+	"net"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -39,16 +41,16 @@ var (
 type client struct {
 	apMAC           string
 	apName          string
-	apChannel       string
+	apChannel       int
 	clientIP        string
 	clientMAC       string
 	clientSSID      string
 	clientUser      string
-	clientProto     string
-	clientRSSI      string
-	clientSNR       string
-	clientBytesRecv string
-	clientBytesSent string
+	clientProto     int
+	clientRSSI      int
+	clientSNR       int
+	clientBytesRecv int
+	clientBytesSent int
 }
 
 func main() {
@@ -168,10 +170,21 @@ func main() {
 						        "802.11 Mac Address of the AP to which the
 						        Mobile Station is associated."
 						    ::= { bsnMobileStationEntry 4 }
+
+						MacAddress ::= TEXTUAL-CONVENTION
+						    DISPLAY-HINT "1x:"
+						    STATUS       current
+						    DESCRIPTION
+						            "Represents an 802 MAC address represented in the
+						            `canonical' order defined by IEEE 802.1a, i.e., as if it
+						            were transmitted least significant bit first, even though
+						            802.5 (in contrast to other 802.x protocols) requires MAC
+						            addresses to be transmitted most significant bit first."
+						    SYNTAX       OCTET STRING (SIZE (6))
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[0])
 					if result.Type == gosnmp.OctetString {
-						clients[uuid].apMAC = string(result.Value.([]byte))
+						clients[uuid].apMAC = hex.EncodeToString(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[1]):
 					// ".1.3.6.1.4.1.14179.2.2.1.1.3" // AP Names
@@ -266,8 +279,8 @@ func main() {
 						    ::= { bsnAPIfEntry 4 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[2])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].apChannel = string(result.Value.([]byte))
+					if result.Type == gosnmp.Integer {
+						clients[uuid].apChannel = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[3]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.2" // Client IP List
@@ -281,8 +294,8 @@ func main() {
 						    ::= { bsnMobileStationEntry 2 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[3])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientIP = string(result.Value.([]byte))
+					if result.Type == gosnmp.OctetString || result.Type == gosnmp.IPAddress {
+						clients[uuid].clientIP = net.IP(result.Value.([]byte)).String()
 					}
 				case strings.HasPrefix(result.Name, oids[4]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.1" // Client MAC List
@@ -298,7 +311,7 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[4])
 					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientMAC = string(result.Value.([]byte))
+						clients[uuid].clientMAC = hex.EncodeToString(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[5]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.7" // Client SSID List
@@ -355,8 +368,8 @@ func main() {
 						    ::= { bsnMobileStationEntry 25 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[7])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientProto = string(result.Value.([]byte))
+					if result.Type == gosnmp.Integer {
+						clients[uuid].clientProto = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[8]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.1" // Client RSSI
@@ -370,8 +383,8 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 1 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[8])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientRSSI = string(result.Value.([]byte))
+					if result.Type == gosnmp.Integer {
+						clients[uuid].clientRSSI = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[9]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.26" // Client SNR
@@ -385,8 +398,8 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 26 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[9])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientSNR = string(result.Value.([]byte))
+					if result.Type == gosnmp.Integer {
+						clients[uuid].clientSNR = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[10]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.2",  // Client Bytes Recv
@@ -401,8 +414,8 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 2 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[10])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientBytesRecv = string(result.Value.([]byte))
+					if result.Type == gosnmp.Counter32 || result.Type == gosnmp.Counter64 {
+						clients[uuid].clientBytesRecv = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[11]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.3",  // Client Bytes Sent
@@ -417,8 +430,8 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 3 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[11])
-					if result.Type == gosnmp.OctetString {
-						clients[uuid].clientBytesSent = string(result.Value.([]byte))
+					if result.Type == gosnmp.Counter32 || result.Type == gosnmp.Counter64 {
+						clients[uuid].clientBytesSent = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				}
 			}
