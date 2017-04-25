@@ -201,6 +201,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[0])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].apMAC = hex.EncodeToString(result.Value.([]byte))
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[1]):
 					// ".1.3.6.1.4.1.14179.2.2.1.1.3" // AP Names
@@ -217,6 +221,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[1])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].apName = string(result.Value.([]byte))
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[2]):
 					// ".1.3.6.1.4.1.14179.2.2.2.1.4" // AP Channel
@@ -297,6 +305,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[2])
 					if result.Type == gosnmp.Integer {
 						clients[uuid].apChannel = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[3]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.2" // Client IP List
@@ -312,6 +324,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[3])
 					if result.Type == gosnmp.OctetString || result.Type == gosnmp.IPAddress {
 						clients[uuid].clientIP = net.IP(result.Value.([]byte)).String()
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[4]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.1" // Client MAC List
@@ -328,6 +344,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[4])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientMAC = hex.EncodeToString(result.Value.([]byte))
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[5]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.7" // Client SSID List
@@ -344,6 +364,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[5])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientSSID = string(result.Value.([]byte))
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[6]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.3" // Client Username List
@@ -361,6 +385,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[6])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientUser = string(result.Value.([]byte))
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[7]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.25" // Client Protocol (a/b/g/n etc)
@@ -386,6 +414,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[7])
 					if result.Type == gosnmp.Integer {
 						clients[uuid].clientProto = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[8]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.1" // Client RSSI
@@ -401,6 +433,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[8])
 					if result.Type == gosnmp.Integer {
 						clients[uuid].clientRSSI = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[9]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.26" // Client SNR
@@ -416,6 +452,10 @@ func main() {
 					uuid := strings.TrimPrefix(result.Name, oids[9])
 					if result.Type == gosnmp.Integer {
 						clients[uuid].clientSNR = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[10]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.2",  // Client Bytes Recv
@@ -434,6 +474,10 @@ func main() {
 						result.Type == gosnmp.Counter64 ||
 						result.Type == gosnmp.Integer {
 						clients[uuid].clientBytesRecv = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[11]):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.3",  // Client Bytes Sent
@@ -452,6 +496,10 @@ func main() {
 						result.Type == gosnmp.Counter64 ||
 						result.Type == gosnmp.Integer {
 						clients[uuid].clientBytesSent = int(gosnmp.ToBigInt(result.Value).Int64())
+					} else {
+						iterationLogger.WithFields(log.Fields{
+							"Type": result.Type,
+						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				}
 			}
