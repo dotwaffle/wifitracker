@@ -414,7 +414,9 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 2 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[10])
-					if result.Type == gosnmp.Counter32 || result.Type == gosnmp.Counter64 {
+					if result.Type == gosnmp.Counter32 ||
+						result.Type == gosnmp.Counter64 ||
+						result.Type == gosnmp.Integer {
 						clients[uuid].clientBytesRecv = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				case strings.HasPrefix(result.Name, oids[11]):
@@ -430,7 +432,9 @@ func main() {
 						    ::= { bsnMobileStationStatsEntry 3 }
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[11])
-					if result.Type == gosnmp.Counter32 || result.Type == gosnmp.Counter64 {
+					if result.Type == gosnmp.Counter32 ||
+						result.Type == gosnmp.Counter64 ||
+						result.Type == gosnmp.Integer {
 						clients[uuid].clientBytesSent = int(gosnmp.ToBigInt(result.Value).Int64())
 					}
 				}
