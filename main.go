@@ -19,7 +19,8 @@ import (
 var (
 	community    = flag.String("community", "public", "SNMP community string")
 	host         = flag.String("host", "127.0.0.1", "SNMP host to query")
-	timeout      = flag.Duration("timeout", 2*time.Second, "SNMP timeout")
+	timeout      = flag.Duration("timeout", 1*time.Second, "SNMP timeout")
+	retries      = flag.Int("retries", 1, "SNMP retries")
 	dbFile       = flag.String("db", "wifi.db", "Database File (sqlite3)")
 	pollInterval = flag.Duration("interval", 10*time.Second, "Polling interval")
 	debug        = flag.Bool("debug", false, "Turn on debugging output")
@@ -65,6 +66,7 @@ func main() {
 	gosnmp.Default.Target = *host
 	gosnmp.Default.Community = *community
 	gosnmp.Default.Timeout = *timeout
+	gosnmp.Default.Retries = *retries
 
 	if *debug == true {
 		log.SetLevel(log.DebugLevel)
@@ -147,6 +149,7 @@ func main() {
 			"host":      *host,
 			"community": *community,
 			"timeout":   *timeout,
+			"retries":   *retries,
 			"err":       err,
 		}).Fatal("Couldn't open SNMP socket!")
 	}
@@ -156,6 +159,7 @@ func main() {
 				"host":      *host,
 				"community": *community,
 				"timeout":   *timeout,
+				"retries":   *retries,
 				"err":       err,
 			}).Fatal("Couldn't close SNMP socket!")
 		}
