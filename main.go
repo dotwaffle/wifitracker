@@ -184,7 +184,7 @@ func main() {
 			clients := make(map[string]*client)
 			for _, result := range results {
 				switch {
-				case strings.HasPrefix(result.Name, oids[0]):
+				case strings.HasPrefix(result.Name, oids[0]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.4" // AP MAC List
 					/*
 						bsnMobileStationAPMacAddr OBJECT-TYPE
@@ -219,7 +219,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[1]):
+				case strings.HasPrefix(result.Name, oids[1]+"."):
 					// ".1.3.6.1.4.1.14179.2.2.1.1.3" // AP Names
 					/*
 						bsnAPName OBJECT-TYPE
@@ -243,7 +243,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[2]):
+				case strings.HasPrefix(result.Name, oids[2]+"."):
 					// ".1.3.6.1.4.1.14179.2.2.2.1.4" // AP Channel
 					/*
 						Current channel number of the AP Interface.
@@ -324,14 +324,14 @@ func main() {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
-						clients[uuid].apChannel = int(gosnmp.ToBigInt(result.Value).Int64())
+						clients[uuid].apChannel = result.Value.(int)
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[3]):
+				case strings.HasPrefix(result.Name, oids[3]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.2" // Client IP List
 					/*
 						bsnMobileStationIpAddress OBJECT-TYPE
@@ -355,7 +355,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[4]):
+				case strings.HasPrefix(result.Name, oids[4]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.1" // Client MAC List
 					/*
 						bsnMobileStationMacAddress OBJECT-TYPE
@@ -379,7 +379,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[5]):
+				case strings.HasPrefix(result.Name, oids[5]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.7" // Client SSID List
 					/*
 						bsnMobileStationSsid OBJECT-TYPE
@@ -403,7 +403,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[6]):
+				case strings.HasPrefix(result.Name, oids[6]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.3" // Client Username List
 					/*
 						bsnMobileStationUserName OBJECT-TYPE
@@ -428,7 +428,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[7]):
+				case strings.HasPrefix(result.Name, oids[7]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.25" // Client Protocol (a/b/g/n etc)
 					/*
 						bsnMobileStationProtocol OBJECT-TYPE
@@ -461,7 +461,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[8]):
+				case strings.HasPrefix(result.Name, oids[8]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.1" // Client RSSI
 					/*
 						bsnMobileStationRSSI OBJECT-TYPE
@@ -477,14 +477,14 @@ func main() {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
-						clients[uuid].clientRSSI = int(gosnmp.ToBigInt(result.Value).Int64())
+						clients[uuid].clientRSSI = result.Value.(int)
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[9]):
+				case strings.HasPrefix(result.Name, oids[9]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.26" // Client SNR
 					/*
 						bsnMobileStationSnr OBJECT-TYPE
@@ -500,14 +500,14 @@ func main() {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
-						clients[uuid].clientSNR = int(gosnmp.ToBigInt(result.Value).Int64())
+						clients[uuid].clientSNR = result.Value.(int)
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[10]):
+				case strings.HasPrefix(result.Name, oids[10]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.2",  // Client Bytes Recv
 					/*
 						bsnMobileStationBytesReceived OBJECT-TYPE
@@ -521,8 +521,7 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[10])
 					if result.Type == gosnmp.Counter32 ||
-						result.Type == gosnmp.Counter64 ||
-						result.Type == gosnmp.Integer {
+						result.Type == gosnmp.Counter64 {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
@@ -533,7 +532,7 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
-				case strings.HasPrefix(result.Name, oids[11]):
+				case strings.HasPrefix(result.Name, oids[11]+"."):
 					// ".1.3.6.1.4.1.14179.2.1.6.1.3",  // Client Bytes Sent
 					/*
 						bsnMobileStationBytesSent OBJECT-TYPE
@@ -547,8 +546,7 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[11])
 					if result.Type == gosnmp.Counter32 ||
-						result.Type == gosnmp.Counter64 ||
-						result.Type == gosnmp.Integer {
+						result.Type == gosnmp.Counter64 {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
