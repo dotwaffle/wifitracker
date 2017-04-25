@@ -215,7 +215,8 @@ func main() {
 						clients[uuid].apMAC = hex.EncodeToString(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[1]):
@@ -238,7 +239,8 @@ func main() {
 						clients[uuid].apName = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[2]):
@@ -325,7 +327,8 @@ func main() {
 						clients[uuid].apChannel = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[3]):
@@ -348,7 +351,8 @@ func main() {
 						clients[uuid].clientIP = result.Value.(string)
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[4]):
@@ -371,7 +375,8 @@ func main() {
 						clients[uuid].clientMAC = hex.EncodeToString(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[5]):
@@ -394,7 +399,8 @@ func main() {
 						clients[uuid].clientSSID = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[6]):
@@ -418,7 +424,8 @@ func main() {
 						clients[uuid].clientUser = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[7]):
@@ -450,7 +457,8 @@ func main() {
 						clients[uuid].clientProto = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[8]):
@@ -472,7 +480,8 @@ func main() {
 						clients[uuid].clientRSSI = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[9]):
@@ -494,7 +503,8 @@ func main() {
 						clients[uuid].clientSNR = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[10]):
@@ -519,7 +529,8 @@ func main() {
 						clients[uuid].clientBytesRecv = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				case strings.HasPrefix(result.Name, oids[11]):
@@ -544,7 +555,8 @@ func main() {
 						clients[uuid].clientBytesSent = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
-							"Type": result.Type,
+							"type": result.Type,
+							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
 				}
