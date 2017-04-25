@@ -178,7 +178,7 @@ func main() {
 		}).Debug("Starting new collection job")
 
 		// don't block
-		go func(tick time.Time, iteration int, dbStmtClient, dbStmtAP *sql.Stmt) {
+		go func(tick time.Time, iteration int, db *sql.DB, dbStmtClient, dbStmtAP *sql.Stmt) {
 			// start counting for time statistics
 			timeStartCollect := time.Now()
 			iterationLogger := log.WithFields(log.Fields{
@@ -633,9 +633,30 @@ func main() {
 
 			// now get all the stored clients and put them in the database
 			timeStartInsert := time.Now()
-			iterationLogger.WithFields(log.Fields{
-				"table": "clients",
-			}).Debug("Storing results in database")
+
+			// by creating a transaction, we actually buffer everything into one execution
+			// this is by far not the best way to do it, but it's a quick performance hack
+			dbTx, err := db.Begin()
+			if err != nil {
+				iterationLogger.WithFields(log.Fields{
+					"dbFile": *dbFile,
+					"err":    err,
+				}).Warn("WARNING: sql insert failed")
+				return
+			}
+			defer func() {
+				err := dbTx.Rollback()
+				if err != nil {
+					if !strings.Contains(err.Error(), "sql: Transaction has already been committed or rolled back") {
+						log.WithFields(log.Fields{
+							"dbFile": *dbFile,
+							"err":    err,
+						}).Fatal("Couldn't rollback database transaction!")
+					}
+				}
+			}()
+
+			// insert the client data
 			for _, data := range clients {
 				if _, err := dbStmtClient.Exec(
 					timeStartCollect,
@@ -651,17 +672,15 @@ func main() {
 					data.clientBytesSent,
 				); err != nil {
 					iterationLogger.WithFields(log.Fields{
-						"dbField": *dbFile,
-						"err":     err,
-						"table":   "clients",
-					}).Warn("WARNING: sql insert failed")
+						"dbFile": *dbFile,
+						"err":    err,
+						"table":  "clients",
+					}).Warn("sql insert failed")
 					return
 				}
 			}
 
-			iterationLogger.WithFields(log.Fields{
-				"table": "aps",
-			}).Debug("Storing results in database")
+			// insert the ap data
 			for apMAC, data := range aps {
 				if _, err := dbStmtAP.Exec(
 					timeStartCollect,
@@ -671,24 +690,32 @@ func main() {
 					data.apChannel5GHz,
 				); err != nil {
 					iterationLogger.WithFields(log.Fields{
-						"dbField": *dbFile,
-						"err":     err,
-						"table":   "aps",
-					}).Warn("WARNING: sql insert failed")
+						"dbFile": *dbFile,
+						"err":    err,
+						"table":  "aps",
+					}).Warn("sql insert failed")
 					return
 				}
 			}
+
+			// commit the transaction, writing everything out to the db
+			if err := dbTx.Commit(); err != nil {
+				iterationLogger.WithFields(log.Fields{
+					"duration": time.Now().Sub(timeStartInsert),
+				}).Debug("Database inserts failed")
+			}
+
 			// how long did the DB work take?
 			iterationLogger.WithFields(log.Fields{
 				"duration": time.Now().Sub(timeStartInsert),
-			}).Debug("Database Inserts Completed")
+			}).Debug("Database inserts completed")
 
 			// how long did everything take?
 			iterationLogger.WithFields(log.Fields{
 				"duration": time.Now().Sub(timeStartCollect),
 			}).Info("Collection complete")
 
-		}(tick, iteration, dbStmtClient, dbStmtAP)
+		}(tick, iteration, db, dbStmtClient, dbStmtAP)
 	}
 
 	// if we've got here, somehow the ticker has broken.
