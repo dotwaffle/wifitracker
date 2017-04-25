@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/hex"
-	"net"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -210,6 +209,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[0])
 					if result.Type == gosnmp.OctetString {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].apMAC = hex.EncodeToString(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -230,6 +232,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[1])
 					if result.Type == gosnmp.OctetString {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].apName = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -314,6 +319,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[2])
 					if result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].apChannel = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -333,7 +341,11 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[3])
 					if result.Type == gosnmp.OctetString || result.Type == gosnmp.IPAddress {
-						clients[uuid].clientIP = net.IP(result.Value.([]byte)).String()
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
+						// ipAddress comes out as a string
+						clients[uuid].clientIP = result.Value.(string)
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"Type": result.Type,
@@ -353,6 +365,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[4])
 					if result.Type == gosnmp.OctetString {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientMAC = hex.EncodeToString(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -373,6 +388,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[5])
 					if result.Type == gosnmp.OctetString {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientSSID = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -394,6 +412,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[6])
 					if result.Type == gosnmp.OctetString {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientUser = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -423,6 +444,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[7])
 					if result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientProto = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -442,6 +466,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[8])
 					if result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientRSSI = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -461,6 +488,9 @@ func main() {
 					*/
 					uuid := strings.TrimPrefix(result.Name, oids[9])
 					if result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientSNR = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -483,6 +513,9 @@ func main() {
 					if result.Type == gosnmp.Counter32 ||
 						result.Type == gosnmp.Counter64 ||
 						result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientBytesRecv = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
@@ -505,6 +538,9 @@ func main() {
 					if result.Type == gosnmp.Counter32 ||
 						result.Type == gosnmp.Counter64 ||
 						result.Type == gosnmp.Integer {
+						if _, ok := clients[uuid]; !ok {
+							clients[uuid] = &client{}
+						}
 						clients[uuid].clientBytesSent = int(gosnmp.ToBigInt(result.Value).Int64())
 					} else {
 						iterationLogger.WithFields(log.Fields{
