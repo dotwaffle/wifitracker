@@ -122,7 +122,7 @@ func main() {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
 			"err":    err,
-		}).Fatal("Couldn't create table in sqlite3 db!")
+		}).Fatal("Couldn't create tables in sqlite3 db!")
 	}
 
 	log.Debug("Database Prepared Statement Loading")
