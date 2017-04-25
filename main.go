@@ -153,13 +153,15 @@ func main() {
 			// get the data from the SNMP Target
 			var results []gosnmp.SnmpPDU
 			for _, oid := range oids {
+				timeWalk := time.Now()
 				result, err := gosnmp.Default.BulkWalkAll(oid)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"Iteration": iteration,
 						"oid":       oid,
 						"err":       err,
-					}).Warn("Couldn't walk SNMP!")
+						"duration":  time.Now().Sub(timeWalk),
+					}).Error("Walking SNMP did not come back cleanly!")
 				}
 				results = append(results, result...)
 			}
