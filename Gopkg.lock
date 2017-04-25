@@ -1,16 +1,16 @@
-memo = "6f5acf68a1974d5684ad9a3528d9521180727295297c3f093db3374015adeeac"
+memo = "ebfc3aee4c2d63ed08f82825e39cc0380487fbcc2a18ab8b1497b5f68d91bdc1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "10f801ebc38b33738c9d17d50860f484a0988ff5"
+  revision = "ba1b36c82c5e05c4f912a88eab0dcd91a171688f"
+  version = "v0.11.5"
 
 [[projects]]
-  branch = "master"
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
-  revision = "cf7286f069c3ef596efcc87781a4653a2e7607bd"
+  revision = "ca5e3819723d8eeaf170ad510e7da1d6d2e94a08"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"

@@ -1,11 +1,11 @@
 
 [[dependencies]]
-  branch = "master"
   name = "github.com/Sirupsen/logrus"
+  version = "v0.11.5"
 
 [[dependencies]]
-  branch = "master"
   name = "github.com/mattn/go-sqlite3"
+  version = "v1.2.0"
 
 [[dependencies]]
   branch = "master"
