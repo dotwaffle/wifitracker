@@ -91,16 +91,16 @@ func main() {
 			time DATE DEFAULT (datetime('now','utc')),
 			apmac TEXT,
 			apname TEXT,
-			apchannel TEXT,
+			apchannel INTEGER,
 			clientip TEXT,
 			clientmac TEXT,
 			clientssid TEXT,
 			clientuser TEXT,
-			clientproto TEXT,
-			clientrssi TEXT,
-			clientsnr TEXT,
-			clientrecv TEXT,
-			clientsent TEXT
+			clientproto INTEGER,
+			clientrssi INTEGER,
+			clientsnr INTEGER,
+			clientrecv INTEGER,
+			clientsent INTEGER
 		);
 	`
 	log.Debug("Database Creation (if needed)")
@@ -454,7 +454,7 @@ func main() {
 						if _, ok := clients[uuid]; !ok {
 							clients[uuid] = &client{}
 						}
-						clients[uuid].clientProto = int(gosnmp.ToBigInt(result.Value).Int64())
+						clients[uuid].clientProto = result.Value.(int)
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
