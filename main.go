@@ -334,7 +334,7 @@ func main() {
 						clients[uuid].clientUser = string(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[7]):
-					// ".1.3.6.1.4.1.14179.2.1.4.1.25", // Client Protocol (a/b/g/n etc)
+					// ".1.3.6.1.4.1.14179.2.1.4.1.25" // Client Protocol (a/b/g/n etc)
 					/*
 						bsnMobileStationProtocol OBJECT-TYPE
 						    SYNTAX INTEGER {
@@ -359,7 +359,7 @@ func main() {
 						clients[uuid].clientProto = string(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[8]):
-					// ".1.3.6.1.4.1.14179.2.1.6.1.1", // Client RSSI
+					// ".1.3.6.1.4.1.14179.2.1.6.1.1" // Client RSSI
 					/*
 						bsnMobileStationRSSI OBJECT-TYPE
 						    SYNTAX INTEGER
@@ -374,7 +374,7 @@ func main() {
 						clients[uuid].clientRSSI = string(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[9]):
-					// ".1.3.6.1.4.1.14179.2.1.6.1.26", // Client SNR
+					// ".1.3.6.1.4.1.14179.2.1.6.1.26" // Client SNR
 					/*
 						bsnMobileStationSnr OBJECT-TYPE
 						    SYNTAX INTEGER
