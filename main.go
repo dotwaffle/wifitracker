@@ -21,14 +21,35 @@ var (
 	dbFile       = flag.String("db", "wifi.db", "Database File (sqlite3)")
 	pollInterval = flag.Duration("interval", 10*time.Second, "Polling interval")
 	oids         = [...]string{
-		".1.3.6.1.4.1.14179.2.1.4.1.4", // AP MAC List
-		".1.3.6.1.4.1.14179.2.2.1.1.3", // AP Names
-		".1.3.6.1.4.1.14179.2.1.4.1.2", // Client IP List
-		".1.3.6.1.4.1.14179.2.1.4.1.1", // Client MAC List
-		".1.3.6.1.4.1.14179.2.1.4.1.7", // Client SSID List
-		".1.3.6.1.4.1.14179.2.1.4.1.3", // Client Username List
+		".1.3.6.1.4.1.14179.2.1.4.1.4",  // AP MAC List
+		".1.3.6.1.4.1.14179.2.2.1.1.3",  // AP Names
+		".1.3.6.1.4.1.14179.2.2.2.1.4",  // AP Channel
+		".1.3.6.1.4.1.14179.2.1.4.1.2",  // Client IP List
+		".1.3.6.1.4.1.14179.2.1.4.1.1",  // Client MAC List
+		".1.3.6.1.4.1.14179.2.1.4.1.7",  // Client SSID List
+		".1.3.6.1.4.1.14179.2.1.4.1.3",  // Client Username List
+		".1.3.6.1.4.1.14179.2.1.4.1.25", // Client Protocol (a/b/g/n etc)
+		".1.3.6.1.4.1.14179.2.1.6.1.1",  // Client RSSI
+		".1.3.6.1.4.1.14179.2.1.6.1.26", // Client SNR
+		".1.3.6.1.4.1.14179.2.1.6.1.2",  // Client Bytes Recv
+		".1.3.6.1.4.1.14179.2.1.6.1.3",  // Client Bytes Sent
 	}
 )
+
+type client struct {
+	apMAC           string
+	apName          string
+	apChannel       string
+	clientIP        string
+	clientMAC       string
+	clientSSID      string
+	clientUser      string
+	clientProto     string
+	clientRSSI      string
+	clientSNR       string
+	clientBytesRecv string
+	clientBytesSent string
+}
 
 func main() {
 	flag.Parse()
@@ -54,10 +75,16 @@ func main() {
 			time DATE DEFAULT (datetime('now','utc')),
 			apmac TEXT,
 			apname TEXT,
+			apchannel TEXT,
 			clientip TEXT,
 			clientmac TEXT,
 			clientssid TEXT,
-			clientuser TEXT
+			clientuser TEXT,
+			clientproto TEXT,
+			clientrssi TEXT,
+			clientsnr TEXT,
+			clientrecv TEXT,
+			clientsent TEXT
 		);
 	`
 	if _, err := db.Exec(sqlCreate); err != nil {
@@ -67,7 +94,7 @@ func main() {
 		}).Fatal("Couldn't create table in sqlite3 db!")
 	}
 
-	dbStmt, err := db.Prepare("INSERT INTO logs(apmac, apname, clientip, clientmac, clientssid, clientuser) VALUES (?,?,?,?,?,?)")
+	dbStmt, err := db.Prepare("INSERT INTO logs(apmac, apname, apchannel, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
@@ -127,51 +154,291 @@ func main() {
 			timeStart = time.Now()
 
 			// parse the SNMP results, sort them into client uuid buckets
-			clients := make(map[string]*struct{ apMAC, apName, clientIP, clientMAC, clientSSID, clientUser string })
+			clients := make(map[string]*client)
 			for _, result := range results {
 				switch {
 				case strings.HasPrefix(result.Name, oids[0]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.4" // AP MAC List
+					/*
+						bsnMobileStationAPMacAddr OBJECT-TYPE
+						    SYNTAX MacAddress
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "802.11 Mac Address of the AP to which the
+						        Mobile Station is associated."
+						    ::= { bsnMobileStationEntry 4 }
+					*/
 					uuid := strings.TrimPrefix(result.Name, oids[0])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].apMAC = string(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[1]):
 					// ".1.3.6.1.4.1.14179.2.2.1.1.3" // AP Names
+					/*
+						bsnAPName OBJECT-TYPE
+						    SYNTAX OCTET STRING(SIZE(0..32))
+						    ACCESS read-write
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Name assigned to this AP. If an AP is not configured its
+						        factory default name will be ap: eg. ap:af:12:be"
+						    ::= { bsnAPEntry 3 }
+					*/
 					uuid := strings.TrimPrefix(result.Name, oids[1])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].apName = string(result.Value.([]byte))
 					}
 				case strings.HasPrefix(result.Name, oids[2]):
-					// ".1.3.6.1.4.1.14179.2.1.4.1.2" // Client IP List
+					// ".1.3.6.1.4.1.14179.2.2.2.1.4" // AP Channel
+					/*
+						Current channel number of the AP Interface.
+						Channel numbers will be from 1 to 14 for 802.11b interface type.
+						Channel numbers will be from 34 to 169 for 802.11a interface
+						type. Allowed channel numbers also depends on the current
+						Country Code set in the Switch. This attribute cannot be set
+						unless bsnAPIfPhyChannelAssignment is set to customized else
+						this attribute gets assigned by dynamic algorithm.
+
+						bsnAPIfPhyChannelNumber OBJECT-TYPE
+						    SYNTAX INTEGER {
+						        ch1(1),
+						        ch2(2),
+						        ch3(3),
+						        ch4(4),
+						        ch5(5),
+						        ch6(6),
+						        ch7(7),
+						        ch8(8),
+						        ch9(9),
+						        ch10(10),
+						        ch11(11),
+						        ch12(12),
+						        ch13(13),
+						        ch14(14),
+						        ch20(20),
+						        ch21(21),
+						        ch22(22),
+						        ch23(23),
+						        ch24(24),
+						        ch25(25),
+						        ch26(26),
+						        ch34(34),
+						        ch36(36),
+						        ch38(38),
+						        ch40(40),
+						        ch42(42),
+						        ch44(44),
+						        ch46(46),
+						        ch48(48),
+						        ch52(52),
+						        ch56(56),
+						        ch60(60),
+						        ch64(64),
+						        ch100(100),
+						        ch104(104),
+						        ch108(108),
+						        ch112(112),
+						        ch116(116),
+						        ch120(120),
+						        ch124(124),
+						        ch128(128),
+						        ch132(132),
+						        ch136(136),
+						        ch140(140),
+						        ch149(149),
+						        ch153(153),
+						        ch157(157),
+						        ch161(161),
+						        ch165(165),
+						        ch169(169)
+						        }
+						    ACCESS read-write
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Current channel number of the AP Interface.
+						        Channel numbers will be from 1 to 14 for 802.11b interface type.
+						        Channel numbers will be from 34 to 169 for 802.11a interface
+						        type.  Allowed channel numbers also depends on the current
+						        Country Code set in the Switch. This attribute cannot be set
+						        unless bsnAPIfPhyChannelAssignment is set to customized else
+						        this attribute gets assigned by dynamic algorithm."
+						    ::= { bsnAPIfEntry 4 }
+					*/
 					uuid := strings.TrimPrefix(result.Name, oids[2])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].apChannel = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[3]):
+					// ".1.3.6.1.4.1.14179.2.1.4.1.2" // Client IP List
+					/*
+						bsnMobileStationIpAddress OBJECT-TYPE
+						    SYNTAX IpAddress
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "IP Address of the Mobile Station"
+						    ::= { bsnMobileStationEntry 2 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[3])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientIP = string(result.Value.([]byte))
 					}
-				case strings.HasPrefix(result.Name, oids[3]):
+				case strings.HasPrefix(result.Name, oids[4]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.1" // Client MAC List
-					uuid := strings.TrimPrefix(result.Name, oids[3])
+					/*
+						bsnMobileStationMacAddress OBJECT-TYPE
+						    SYNTAX MacAddress
+
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "802.11 MAC Address of the Mobile Station."
+						    ::= { bsnMobileStationEntry 1 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[4])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientMAC = string(result.Value.([]byte))
 					}
-				case strings.HasPrefix(result.Name, oids[4]):
+				case strings.HasPrefix(result.Name, oids[5]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.7" // Client SSID List
-					uuid := strings.TrimPrefix(result.Name, oids[4])
+					/*
+						bsnMobileStationSsid OBJECT-TYPE
+						    SYNTAX DisplayString
+
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "The SSID Advertised by Mobile Station"
+						    ::= { bsnMobileStationEntry 7 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[5])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientSSID = string(result.Value.([]byte))
 					}
-				case strings.HasPrefix(result.Name, oids[5]):
+				case strings.HasPrefix(result.Name, oids[6]):
 					// ".1.3.6.1.4.1.14179.2.1.4.1.3" // Client Username List
-					uuid := strings.TrimPrefix(result.Name, oids[5])
+					/*
+						bsnMobileStationUserName OBJECT-TYPE
+						    SYNTAX DisplayString
+
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "User Name,if any, of the Mobile Station. This would
+						        be non empty in case of Web Authentication and IPSec."
+						    ::= { bsnMobileStationEntry 3 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[6])
 					if result.Type == gosnmp.OctetString {
 						clients[uuid].clientUser = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[7]):
+					// ".1.3.6.1.4.1.14179.2.1.4.1.25", // Client Protocol (a/b/g/n etc)
+					/*
+						bsnMobileStationProtocol OBJECT-TYPE
+						    SYNTAX INTEGER {
+						        dot11a(1),
+						        dot11b(2),
+						        dot11g(3),
+						        unknown(4),
+						        mobile(5),
+						        dot11n24(6),
+						        dot11n5(7)
+						        }
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "The 802.11 protocol type of the client. The protocol
+						        is mobile when this client detail is seen on the
+						        anchor i.e it's mobility status is anchor."
+						    ::= { bsnMobileStationEntry 25 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[7])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].clientProto = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[8]):
+					// ".1.3.6.1.4.1.14179.2.1.6.1.1", // Client RSSI
+					/*
+						bsnMobileStationRSSI OBJECT-TYPE
+						    SYNTAX INTEGER
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Average packet RSSI for the Mobile Station."
+						    ::= { bsnMobileStationStatsEntry 1 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[8])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].clientRSSI = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[9]):
+					// ".1.3.6.1.4.1.14179.2.1.6.1.26", // Client SNR
+					/*
+						bsnMobileStationSnr OBJECT-TYPE
+						    SYNTAX INTEGER
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Signal to noise Ratio of the Mobile Station."
+						    ::= { bsnMobileStationStatsEntry 26 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[9])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].clientSNR = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[10]):
+					// ".1.3.6.1.4.1.14179.2.1.6.1.2",  // Client Bytes Recv
+					/*
+						bsnMobileStationBytesReceived OBJECT-TYPE
+						    SYNTAX
+						           Counter
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Bytes received from Mobile Station"
+						    ::= { bsnMobileStationStatsEntry 2 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[10])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].clientBytesRecv = string(result.Value.([]byte))
+					}
+				case strings.HasPrefix(result.Name, oids[11]):
+					// ".1.3.6.1.4.1.14179.2.1.6.1.3",  // Client Bytes Sent
+					/*
+						bsnMobileStationBytesSent OBJECT-TYPE
+						    SYNTAX
+						           Counter
+						    ACCESS read-only
+						    STATUS mandatory
+						    DESCRIPTION
+						        "Bytes sent to Mobile Station"
+						    ::= { bsnMobileStationStatsEntry 3 }
+					*/
+					uuid := strings.TrimPrefix(result.Name, oids[11])
+					if result.Type == gosnmp.OctetString {
+						clients[uuid].clientBytesSent = string(result.Value.([]byte))
 					}
 				}
 			}
 
 			// now get all the stored clients and put them in the database
 			for _, data := range clients {
-				if _, err := dbStmt.Exec(data.apMAC, data.apName, data.clientIP, data.clientMAC, data.clientSSID, data.clientUser); err != nil {
+				if _, err := dbStmt.Exec(
+					data.apMAC,
+					data.apName,
+					data.apChannel,
+					data.clientIP,
+					data.clientMAC,
+					data.clientSSID,
+					data.clientUser,
+					data.clientProto,
+					data.clientRSSI,
+					data.clientSNR,
+					data.clientBytesRecv,
+					data.clientBytesSent,
+				); err != nil {
 					iterationLogger.WithFields(log.Fields{
 						"dbField": *dbFile,
 						"err":     err,
