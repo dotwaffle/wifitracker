@@ -559,6 +559,11 @@ func main() {
 							"oid":  result.Name,
 						}).Warn("Bad/Unexpected SNMP Data")
 					}
+				default:
+					iterationLogger.WithFields(log.Fields{
+						"type": result.Type,
+						"oid":  result.Name,
+					}).Warn("Unknown SNMP Data Found")
 				}
 			}
 
