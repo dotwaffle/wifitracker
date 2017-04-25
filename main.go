@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/hex"
+	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -40,8 +41,6 @@ var (
 
 type client struct {
 	apMAC           string
-	apName          string
-	apChannel       int
 	clientIP        string
 	clientMAC       string
 	clientSSID      string
@@ -51,6 +50,13 @@ type client struct {
 	clientSNR       int
 	clientBytesRecv int
 	clientBytesSent int
+}
+
+type ap struct {
+	apMAC          string
+	apName         string
+	apChannel24GHz int // 2.4GHz, obviously
+	apChannel5GHz  int
 }
 
 func main() {
@@ -86,12 +92,11 @@ func main() {
 
 	// create table if it doesn't exist already
 	sqlCreate := `
-		CREATE TABLE IF NOT EXISTS logs (
+		CREATE TABLE IF NOT EXISTS clients (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			timestamp DATE DEFAULT (datetime('now','utc')),
+			uuid TEXT,
 			apmac TEXT,
-			apname TEXT,
-			apchannel INTEGER,
 			clientip TEXT,
 			clientmac TEXT,
 			clientssid TEXT,
@@ -101,6 +106,14 @@ func main() {
 			clientsnr INTEGER,
 			clientrecv INTEGER,
 			clientsent INTEGER
+		);
+		CREATE TABLE IF NOT EXISTS aps (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			timestamp DATE DEFAULT (datetime('now','utc')),
+			apmac TEXT,
+			apname TEXT,
+			apchannel24 INTEGER,
+			apchannel5 INTEGER
 		);
 	`
 	log.Debug("Database Creation (if needed)")
@@ -112,11 +125,20 @@ func main() {
 	}
 
 	log.Debug("Database Prepared Statement Loading")
-	dbStmt, err := db.Prepare("INSERT INTO logs(timestamp, apmac, apname, apchannel, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	dbStmtClient, err := db.Prepare("INSERT INTO clients(timestamp, uuid, apmac, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
 			"err":    err,
+			"table":  "clients",
+		}).Fatal("Couldn't prepare sql statement!")
+	}
+	dbStmtAP, err := db.Prepare("INSERT INTO aps(timestamp, apmac, apname, apchannel24, apchannel5) VALUES (?,?,?,?,?)")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"dbFile": *dbFile,
+			"err":    err,
+			"table":  "aps",
 		}).Fatal("Couldn't prepare sql statement!")
 	}
 
@@ -153,7 +175,7 @@ func main() {
 		}).Debug("Starting new collection job")
 
 		// don't block
-		go func(tick time.Time, iteration int, dbStmt *sql.Stmt) {
+		go func(tick time.Time, iteration int, dbStmtClient, dbStmtAP *sql.Stmt) {
 			// start counting for time statistics
 			timeStartCollect := time.Now()
 			iterationLogger := log.WithFields(log.Fields{
@@ -182,6 +204,7 @@ func main() {
 
 			// parse the SNMP results, sort them into client uuid buckets
 			clients := make(map[string]*client)
+			aps := make(map[string]*ap)
 			for _, result := range results {
 				switch {
 				case strings.HasPrefix(result.Name, oids[0]+"."):
@@ -231,12 +254,30 @@ func main() {
 						        factory default name will be ap: eg. ap:af:12:be"
 						    ::= { bsnAPEntry 3 }
 					*/
-					uuid := strings.TrimPrefix(result.Name, oids[1])
-					if result.Type == gosnmp.OctetString {
-						if _, ok := clients[uuid]; !ok {
-							clients[uuid] = &client{}
+
+					// the uuid is currently dotted decimal, we need it in hex
+					uuid := strings.TrimPrefix(result.Name, oids[1]+".")
+					uuidSplit := strings.Split(uuid, ".")
+					mac := make([]byte, 0)
+
+					// for each octet string, oonvert it to decimal
+					for _, runeOctet := range uuidSplit {
+						intOctet, err := strconv.Atoi(string(runeOctet))
+						if err != nil {
+							log.Error("ASCII to Integer failure")
 						}
-						clients[uuid].apName = string(result.Value.([]byte))
+						mac = append(mac, byte(intOctet))
+					}
+
+					// there are six bytes in a MAC address
+					// skip any trailing index
+					apMAC := hex.EncodeToString(mac[0:6])
+
+					if result.Type == gosnmp.OctetString {
+						if _, ok := aps[apMAC]; !ok {
+							aps[apMAC] = &ap{}
+						}
+						aps[apMAC].apName = string(result.Value.([]byte))
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
@@ -319,12 +360,34 @@ func main() {
 						        this attribute gets assigned by dynamic algorithm."
 						    ::= { bsnAPIfEntry 4 }
 					*/
-					uuid := strings.TrimPrefix(result.Name, oids[2])
-					if result.Type == gosnmp.Integer {
-						if _, ok := clients[uuid]; !ok {
-							clients[uuid] = &client{}
+
+					// the uuid is currently dotted decimal, we need it in hex
+					uuid := strings.TrimPrefix(result.Name, oids[2]+".")
+					uuidSplit := strings.Split(uuid, ".")
+					mac := make([]byte, 0)
+
+					// for each octet string, oonvert it to decimal
+					for _, runeOctet := range uuidSplit {
+						intOctet, err := strconv.Atoi(string(runeOctet))
+						if err != nil {
+							log.Error("ASCII to Integer failure")
 						}
-						clients[uuid].apChannel = result.Value.(int)
+						mac = append(mac, byte(intOctet))
+					}
+
+					// there are six bytes in a MAC address
+					// skip any trailing index
+					apMAC := hex.EncodeToString(mac[0:6])
+
+					if result.Type == gosnmp.Integer {
+						if _, ok := aps[apMAC]; !ok {
+							aps[apMAC] = &ap{}
+						}
+						if channel := result.Value.(int); channel < 15 {
+							aps[apMAC].apChannel24GHz = channel
+						} else {
+							aps[apMAC].apChannel5GHz = channel
+						}
 					} else {
 						iterationLogger.WithFields(log.Fields{
 							"type": result.Type,
@@ -566,14 +629,15 @@ func main() {
 			}
 
 			// now get all the stored clients and put them in the database
-			iterationLogger.Debug("Storing results in database")
 			timeStartInsert := time.Now()
-			for _, data := range clients {
-				if _, err := dbStmt.Exec(
+			iterationLogger.WithFields(log.Fields{
+				"table": "clients",
+			}).Debug("Storing results in database")
+			for uuid, data := range clients {
+				if _, err := dbStmtClient.Exec(
 					timeStartCollect,
+					uuid,
 					data.apMAC,
-					data.apName,
-					data.apChannel,
 					data.clientIP,
 					data.clientMAC,
 					data.clientSSID,
@@ -587,6 +651,27 @@ func main() {
 					iterationLogger.WithFields(log.Fields{
 						"dbField": *dbFile,
 						"err":     err,
+						"table":   "clients",
+					}).Warn("WARNING: sql insert failed")
+					return
+				}
+			}
+
+			iterationLogger.WithFields(log.Fields{
+				"table": "aps",
+			}).Debug("Storing results in database")
+			for apMAC, data := range aps {
+				if _, err := dbStmtAP.Exec(
+					timeStartCollect,
+					apMAC,
+					data.apName,
+					data.apChannel24GHz,
+					data.apChannel5GHz,
+				); err != nil {
+					iterationLogger.WithFields(log.Fields{
+						"dbField": *dbFile,
+						"err":     err,
+						"table":   "aps",
 					}).Warn("WARNING: sql insert failed")
 					return
 				}
@@ -601,7 +686,7 @@ func main() {
 				"duration": time.Now().Sub(timeStartCollect),
 			}).Info("Collection complete")
 
-		}(tick, iteration, dbStmt)
+		}(tick, iteration, dbStmtClient, dbStmtAP)
 	}
 
 	// if we've got here, somehow the ticker has broken.
