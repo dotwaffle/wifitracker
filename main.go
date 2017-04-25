@@ -95,7 +95,6 @@ func main() {
 		CREATE TABLE IF NOT EXISTS clients (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			timestamp DATE DEFAULT (datetime('now','utc')),
-			uuid TEXT,
 			apmac TEXT,
 			clientip TEXT,
 			clientmac TEXT,
@@ -125,7 +124,7 @@ func main() {
 	}
 
 	log.Debug("Database Prepared Statement Loading")
-	dbStmtClient, err := db.Prepare("INSERT INTO clients(timestamp, uuid, apmac, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+	dbStmtClient, err := db.Prepare("INSERT INTO clients(timestamp, apmac, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
@@ -633,10 +632,9 @@ func main() {
 			iterationLogger.WithFields(log.Fields{
 				"table": "clients",
 			}).Debug("Storing results in database")
-			for uuid, data := range clients {
+			for _, data := range clients {
 				if _, err := dbStmtClient.Exec(
 					timeStartCollect,
-					uuid,
 					data.apMAC,
 					data.clientIP,
 					data.clientMAC,
