@@ -22,6 +22,7 @@ var (
 	timeout      = flag.Duration("timeout", 2*time.Second, "SNMP timeout")
 	dbFile       = flag.String("db", "wifi.db", "Database File (sqlite3)")
 	pollInterval = flag.Duration("interval", 10*time.Second, "Polling interval")
+	debug        = flag.Bool("debug", false, "Turn on debugging output")
 	oids         = [...]string{
 		".1.3.6.1.4.1.14179.2.1.4.1.4",  // AP MAC List
 		".1.3.6.1.4.1.14179.2.2.1.1.3",  // AP Names
@@ -60,7 +61,14 @@ func main() {
 	gosnmp.Default.Community = *community
 	gosnmp.Default.Timeout = *timeout
 
+	if *debug == true {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+
 	// get a db connection, sqlite3 for now because I'm lazy
+	log.Debug("Database Open")
 	db, err := sql.Open("sqlite3", *dbFile)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -96,6 +104,7 @@ func main() {
 			clientsent TEXT
 		);
 	`
+	log.Debug("Database Creation (if needed)")
 	if _, err := db.Exec(sqlCreate); err != nil {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
@@ -103,6 +112,7 @@ func main() {
 		}).Fatal("Couldn't create table in sqlite3 db!")
 	}
 
+	log.Debug("Database Prepared Statement Loading")
 	dbStmt, err := db.Prepare("INSERT INTO logs(apmac, apname, apchannel, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -111,6 +121,7 @@ func main() {
 		}).Fatal("Couldn't prepare sql statement!")
 	}
 
+	log.Debug("SNMP Connecting")
 	if err := gosnmp.Default.Connect(); err != nil {
 		log.WithFields(log.Fields{
 			"host":      *host,
@@ -140,12 +151,12 @@ func main() {
 		iteration++
 		log.WithFields(log.Fields{
 			"Iteration": iteration,
-		}).Info("Starting new collection job")
+		}).Debug("Starting new collection job")
 
 		// don't block
 		go func(tick time.Time, iteration int, dbStmt *sql.Stmt) {
 			// start counting for time statistics
-			timeStart := time.Now()
+			timeStartCollect := time.Now()
 			iterationLogger := log.WithFields(log.Fields{
 				"Iteration": iteration,
 			})
@@ -153,25 +164,22 @@ func main() {
 			// get the data from the SNMP Target
 			var results []gosnmp.SnmpPDU
 			for _, oid := range oids {
-				timeWalk := time.Now()
+				timeStartWalk := time.Now()
 				result, err := gosnmp.Default.BulkWalkAll(oid)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"Iteration": iteration,
 						"oid":       oid,
 						"err":       err,
-						"duration":  time.Now().Sub(timeWalk),
+						"duration":  time.Now().Sub(timeStartWalk),
 					}).Error("Walking SNMP did not come back cleanly!")
 				}
 				results = append(results, result...)
 			}
 			// how long did the SNMP querying take?
 			iterationLogger.WithFields(log.Fields{
-				"duration": time.Now().Sub(timeStart),
-			}).Info("SNMP Collection Completed")
-
-			// reset the time to now monitor how long the DB work took
-			timeStart = time.Now()
+				"duration": time.Now().Sub(timeStartCollect),
+			}).Debug("SNMP Collection Completed")
 
 			// parse the SNMP results, sort them into client uuid buckets
 			clients := make(map[string]*client)
@@ -507,6 +515,8 @@ func main() {
 			}
 
 			// now get all the stored clients and put them in the database
+			iterationLogger.Debug("Storing results in database")
+			timeStartInsert := time.Now()
 			for _, data := range clients {
 				if _, err := dbStmt.Exec(
 					data.apMAC,
@@ -531,8 +541,13 @@ func main() {
 			}
 			// how long did the DB work take?
 			iterationLogger.WithFields(log.Fields{
-				"duration": time.Now().Sub(timeStart),
-			}).Info("Database Inserts Completed")
+				"duration": time.Now().Sub(timeStartInsert),
+			}).Debug("Database Inserts Completed")
+
+			// how long did everything take?
+			iterationLogger.WithFields(log.Fields{
+				"duration": time.Now().Sub(timeStartCollect),
+			}).Info("Collection complete")
 
 		}(tick, iteration, dbStmt)
 	}
