@@ -68,7 +68,14 @@ func main() {
 			"err":    err,
 		}).Fatal("Couldn't open db file!")
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		if err := db.Close(); err != nil {
+			log.WithFields(log.Fields{
+				"dbFile": *dbFile,
+				"err":    err,
+			}).Fatal("Couldn't close db file!")
+		}
+	}(db)
 
 	// create table if it doesn't exist already
 	sqlCreate := `
@@ -112,7 +119,16 @@ func main() {
 			"err":       err,
 		}).Fatal("Couldn't open SNMP socket!")
 	}
-	defer gosnmp.Default.Conn.Close()
+	defer func() {
+		if err := gosnmp.Default.Conn.Close(); err != nil {
+			log.WithFields(log.Fields{
+				"host":      *host,
+				"community": *community,
+				"timeout":   *timeout,
+				"err":       err,
+			}).Fatal("Couldn't close SNMP socket!")
+		}
+	}()
 
 	// run every interval, regardless of whether there is an outstanding request or not
 	ticker := time.NewTicker(*pollInterval)
