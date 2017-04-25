@@ -88,7 +88,7 @@ func main() {
 	sqlCreate := `
 		CREATE TABLE IF NOT EXISTS logs (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			time DATE DEFAULT (datetime('now','utc')),
+			timestamp DATE DEFAULT (datetime('now','utc')),
 			apmac TEXT,
 			apname TEXT,
 			apchannel INTEGER,
@@ -112,7 +112,7 @@ func main() {
 	}
 
 	log.Debug("Database Prepared Statement Loading")
-	dbStmt, err := db.Prepare("INSERT INTO logs(apmac, apname, apchannel, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+	dbStmt, err := db.Prepare("INSERT INTO logs(timestamp, apmac, apname, apchannel, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dbFile": *dbFile,
@@ -572,6 +572,7 @@ func main() {
 			timeStartInsert := time.Now()
 			for _, data := range clients {
 				if _, err := dbStmt.Exec(
+					timeStartCollect,
 					data.apMAC,
 					data.apName,
 					data.apChannel,
