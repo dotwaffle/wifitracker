@@ -202,6 +202,7 @@ func main() {
 			}
 			// how long did the SNMP querying take?
 			iterationLogger.WithFields(log.Fields{
+				"results":  len(results),
 				"duration": time.Now().Sub(timeStartCollect),
 			}).Debug("SNMP Collection Completed")
 
@@ -641,7 +642,7 @@ func main() {
 				iterationLogger.WithFields(log.Fields{
 					"dbFile": *dbFile,
 					"err":    err,
-				}).Warn("WARNING: sql insert failed")
+				}).Warn("sql insert failed")
 				return
 			}
 			defer func() {
@@ -656,9 +657,12 @@ func main() {
 				}
 			}()
 
+			// for debugging, count how many rows we insert
+			var rows int
+
 			// insert the client data
 			for _, data := range clients {
-				if _, err := dbStmtClient.Exec(
+				res, err := dbStmtClient.Exec(
 					timeStartCollect,
 					data.apMAC,
 					data.clientIP,
@@ -670,7 +674,8 @@ func main() {
 					data.clientSNR,
 					data.clientBytesRecv,
 					data.clientBytesSent,
-				); err != nil {
+				)
+				if err != nil {
 					iterationLogger.WithFields(log.Fields{
 						"dbFile": *dbFile,
 						"err":    err,
@@ -678,23 +683,44 @@ func main() {
 					}).Warn("sql insert failed")
 					return
 				}
+				rowsClient, err := res.RowsAffected()
+				if err != nil {
+					iterationLogger.WithFields(log.Fields{
+						"dbFile": *dbFile,
+						"err":    err,
+						"table":  "clients",
+					}).Warn("sql counting failed")
+				} else {
+					rows += int(rowsClient)
+				}
 			}
 
 			// insert the ap data
 			for apMAC, data := range aps {
-				if _, err := dbStmtAP.Exec(
+				res, err := dbStmtAP.Exec(
 					timeStartCollect,
 					apMAC,
 					data.apName,
 					data.apChannel24GHz,
 					data.apChannel5GHz,
-				); err != nil {
+				)
+				if err != nil {
 					iterationLogger.WithFields(log.Fields{
 						"dbFile": *dbFile,
 						"err":    err,
 						"table":  "aps",
 					}).Warn("sql insert failed")
 					return
+				}
+				rowsAP, err := res.RowsAffected()
+				if err != nil {
+					iterationLogger.WithFields(log.Fields{
+						"dbFile": *dbFile,
+						"err":    err,
+						"table":  "aps",
+					}).Warn("sql counting failed")
+				} else {
+					rows += int(rowsAP)
 				}
 			}
 
@@ -707,6 +733,7 @@ func main() {
 
 			// how long did the DB work take?
 			iterationLogger.WithFields(log.Fields{
+				"rows":     rows,
 				"duration": time.Now().Sub(timeStartInsert),
 			}).Debug("Database inserts completed")
 
