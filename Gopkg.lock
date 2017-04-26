@@ -1,4 +1,4 @@
-memo = "ebfc3aee4c2d63ed08f82825e39cc0380487fbcc2a18ab8b1497b5f68d91bdc1"
+memo = "360dbedd11d0ffb9cf1d6557a196e68e9d69b21b2b709af129a97cc188179af1"
 
 [[projects]]
   name = "github.com/Sirupsen/logrus"
@@ -13,6 +13,12 @@ memo = "ebfc3aee4c2d63ed08f82825e39cc0380487fbcc2a18ab8b1497b5f68d91bdc1"
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/namsral/flag"
+  packages = ["."]
+  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
+  version = "v1.7.4-pre"
+
+[[projects]]
   branch = "master"
   name = "github.com/soniah/gosnmp"
   packages = ["."]
@@ -22,10 +28,10 @@ memo = "ebfc3aee4c2d63ed08f82825e39cc0380487fbcc2a18ab8b1497b5f68d91bdc1"
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "d212a1ef2de2f5d441c327b8f26cf3ea3ea9f265"
+  revision = "da118f7b8e5954f39d0d2130ab35d4bf0e3cb344"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "ea9bcade75cb975a0b9738936568ab388b845617"
+  revision = "9f30dcbe5be197894515a338a9bda9253567ea8f"
