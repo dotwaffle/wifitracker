@@ -387,6 +387,7 @@ func main() {
 						if _, ok := aps[apMAC]; !ok {
 							aps[apMAC] = &ap{}
 						}
+						// all 2.4GHz channels are in the range 1-14
 						if channel := result.Value.(int); channel < 15 {
 							aps[apMAC].apChannel24GHz = channel
 						} else {
