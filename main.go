@@ -5,13 +5,13 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/mattn/go-sqlite3"
-	flag "github.com/namsral/flag"
 
 	"encoding/hex"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/namsral/flag"
 	"github.com/soniah/gosnmp"
 )
 
@@ -23,7 +23,6 @@ var (
 	dbFile       = flag.String("db", "wifi.db", "Database File (sqlite3)")
 	pollInterval = flag.Duration("interval", 10*time.Second, "Polling interval")
 	debug        = flag.Bool("debug", false, "Turn on debugging output")
-	config       = flag.String(flag.DefaultConfigFlagname, "wifitracker.conf", "Path to config file")
 	oids         = [...]string{
 		".1.3.6.1.4.1.14179.2.1.4.1.4",  // AP MAC List
 		".1.3.6.1.4.1.14179.2.2.1.1.3",  // AP Names

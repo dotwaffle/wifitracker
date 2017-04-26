@@ -1,4 +1,4 @@
-memo = "360dbedd11d0ffb9cf1d6557a196e68e9d69b21b2b709af129a97cc188179af1"
+memo = "4435efcf06e8bd402555895b846e92479b9566b064424fde8ff7ec1c5b597155"
 
 [[projects]]
   name = "github.com/Sirupsen/logrus"
@@ -15,8 +15,8 @@ memo = "360dbedd11d0ffb9cf1d6557a196e68e9d69b21b2b709af129a97cc188179af1"
 [[projects]]
   name = "github.com/namsral/flag"
   packages = ["."]
-  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
-  version = "v1.7.4-pre"
+  revision = "7fa59bdb55485001d702d9b6e15367cdf26bfde8"
+  version = "v1.7.4-alpha"
 
 [[projects]]
   branch = "master"

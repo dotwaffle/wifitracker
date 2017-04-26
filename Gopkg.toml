@@ -9,4 +9,8 @@
 
 [[dependencies]]
   branch = "master"
+  name = "github.com/namsral/flag"
+
+[[dependencies]]
+  branch = "master"
   name = "github.com/soniah/gosnmp"
