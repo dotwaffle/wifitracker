@@ -7,4 +7,6 @@ RUN apk add --no-cache --virtual .build-deps git gcc musl-dev \
 	&& dep ensure \
 	&& go install -a -v \
 	&& apk del .build-deps
+VOLUME /db
+WORKDIR /db
 ENTRYPOINT /go/bin/wifitracker
