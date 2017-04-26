@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 sqlite3 -column -header ${1:-wifi.db} "
 	SELECT
-		c.timestamp as timestamp,
+		DATETIME(c.timestamp) as timestamp,
 		c.clientip as ip,
 		a.apname as ap,
 		c.clientssid as ssid,

@@ -664,7 +664,7 @@ func main() {
 			// insert the client data
 			for _, data := range clients {
 				res, err := dbStmtClient.Exec(
-					timeStartCollect,
+					timeStartCollect.UTC(),
 					data.apMAC,
 					data.clientIP,
 					data.clientMAC,
@@ -699,7 +699,7 @@ func main() {
 			// insert the ap data
 			for apMAC, data := range aps {
 				res, err := dbStmtAP.Exec(
-					timeStartCollect,
+					timeStartCollect.UTC(),
 					apMAC,
 					data.apName,
 					data.apChannel24GHz,
