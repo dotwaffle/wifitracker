@@ -1,11 +1,15 @@
 FROM golang:alpine
 LABEL maintainer "matthew@walster.org"
-RUN apk add --no-cache --virtual .build-deps git gcc musl-dev \
+RUN mkdir -p /go/src/wifitracker
+COPY . /go/src/wifitracker
+RUN apk add --no-cache --virtual .build-deps \
+	git \
+	gcc \
+	musl-dev \
+	&& cd /go/src/wifitracker \
 	&& go get -u -x github.com/golang/dep/... \
-	&& go get -d -u -x github.com/dotwaffle/wifitracker \
-	&& cd /go/src/github.com/dotwaffle/wifitracker \
-	&& dep ensure \
-	&& go install -a -v \
+	&& dep ensure -v \
+	&& go install -v \
 	&& apk del .build-deps
 VOLUME /db
 WORKDIR /db
