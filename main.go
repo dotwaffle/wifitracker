@@ -29,6 +29,7 @@ var (
 	sqlUser          = flag.String("sqluser", "user", "MySQL User")
 	sqlPass          = flag.String("sqlpass", "pass", "MySQL Pass")
 	sqlDB            = flag.String("sqldb", "wifi", "MySQL Database")
+	sqlTLS           = flag.String("sqltls", "false", "MySQL TLS (default \"false\") (true, false, skip-verify)")
 	debug            = flag.Bool("debug", false, "Turn on debugging output")
 	oids             = [...]string{
 		".1.3.6.1.4.1.14179.2.1.4.1.4",  // AP MAC List
@@ -82,11 +83,12 @@ func main() {
 
 	// get a db connection, sqlite3 for now because I'm lazy
 	log.Debug("Database Setup")
-	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s",
+	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s?tls=%s",
 		*sqlUser,
 		*sqlPass,
 		net.JoinHostPort(*sqlHost, strconv.Itoa(*sqlPort)),
-		*sqlDB)
+		*sqlDB,
+		*sqlTLS)
 	db, err := sql.Open("mysql", dbDSN)
 	if err != nil {
 		log.WithFields(log.Fields{

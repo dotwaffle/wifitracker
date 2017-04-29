@@ -8,7 +8,6 @@ In a lame attempt to document, here's the usage statement:
 
 ```
 $ wifitracker -h
-Usage of ./wifitracker:
   -config string
         Path to Configuration File (optional)
   -debug
@@ -31,6 +30,8 @@ Usage of ./wifitracker:
         MySQL Pass (default "pass")
   -sqlport int
         MySQL Port (default 3306)
+  -sqltls string
+        MySQL TLS (default "false") (true, false, skip-verify)
   -sqluser string
         MySQL User (default "user")
 ```
