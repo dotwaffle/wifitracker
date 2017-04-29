@@ -23,5 +23,8 @@ _testmain.go
 *.test
 *.prof
 
-wifi.db
+# Don't check-in the vendor directory, allow dep to manage it for us
 vendor/
+
+# Always a good idea to ignore configuration files!
+*.conf

@@ -4,12 +4,16 @@
   version = "v0.11.5"
 
 [[dependencies]]
+  name = "github.com/go-sql-driver/mysql"
+  version = "v1.3"
+
+[[dependencies]]
   name = "github.com/mattn/go-sqlite3"
   version = "v1.2.0"
 
 [[dependencies]]
-  branch = "master"
   name = "github.com/namsral/flag"
+  version = "v1.7.4-alpha"
 
 [[dependencies]]
   branch = "master"

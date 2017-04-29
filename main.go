@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"net"
 
 	log "github.com/Sirupsen/logrus"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 
 	"encoding/hex"
 	"strconv"
@@ -16,14 +18,19 @@ import (
 )
 
 var (
-	community    = flag.String("community", "public", "SNMP community string")
-	host         = flag.String("host", "127.0.0.1", "SNMP host to query")
-	timeout      = flag.Duration("timeout", 1*time.Second, "SNMP timeout")
-	retries      = flag.Int("retries", 1, "SNMP retries")
-	dbFile       = flag.String("db", "wifi.db", "Database File (sqlite3)")
-	pollInterval = flag.Duration("interval", 10*time.Second, "Polling interval")
-	debug        = flag.Bool("debug", false, "Turn on debugging output")
-	oids         = [...]string{
+	configFile       = flag.String(flag.DefaultConfigFlagname, "", "Path to Configuration File (optional)")
+	snmpCommunity    = flag.String("snmpcommunity", "public", "SNMP community string")
+	snmpHost         = flag.String("snmphost", "localhost", "SNMP host to query")
+	snmpPollInterval = flag.Duration("snmppollinterval", 10*time.Second, "SNMP Polling interval")
+	snmpRetries      = flag.Int("snmpretries", 1, "SNMP retries")
+	snmpTimeout      = flag.Duration("snmptimeout", 1*time.Second, "SNMP timeout")
+	sqlHost          = flag.String("sqlhost", "localhost", "MySQL Host")
+	sqlPort          = flag.Int("sqlport", 3306, "MySQL Port")
+	sqlUser          = flag.String("sqluser", "user", "MySQL User")
+	sqlPass          = flag.String("sqlpass", "pass", "MySQL Pass")
+	sqlDB            = flag.String("sqldb", "wifi", "MySQL Database")
+	debug            = flag.Bool("debug", false, "Turn on debugging output")
+	oids             = [...]string{
 		".1.3.6.1.4.1.14179.2.1.4.1.4",  // AP MAC List
 		".1.3.6.1.4.1.14179.2.2.1.1.3",  // AP Names
 		".1.3.6.1.4.1.14179.2.2.2.1.4",  // AP Channel
@@ -62,10 +69,10 @@ type ap struct {
 func main() {
 	flag.Parse()
 
-	gosnmp.Default.Target = *host
-	gosnmp.Default.Community = *community
-	gosnmp.Default.Timeout = *timeout
-	gosnmp.Default.Retries = *retries
+	gosnmp.Default.Target = *snmpHost
+	gosnmp.Default.Community = *snmpCommunity
+	gosnmp.Default.Timeout = *snmpTimeout
+	gosnmp.Default.Retries = *snmpRetries
 
 	if *debug == true {
 		log.SetLevel(log.DebugLevel)
@@ -74,28 +81,42 @@ func main() {
 	}
 
 	// get a db connection, sqlite3 for now because I'm lazy
-	log.Debug("Database Open")
-	db, err := sql.Open("sqlite3", *dbFile)
+	log.Debug("Database Setup")
+	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s",
+		*sqlUser,
+		*sqlPass,
+		net.JoinHostPort(*sqlHost, strconv.Itoa(*sqlPort)),
+		*sqlDB)
+	db, err := sql.Open("mysql", dbDSN)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"dbFile": *dbFile,
-			"err":    err,
+			"dsn": dbDSN,
+			"err": err,
 		}).Fatal("Couldn't open db file!")
 	}
 	defer func(db *sql.DB) {
 		if err := db.Close(); err != nil {
 			log.WithFields(log.Fields{
-				"dbFile": *dbFile,
-				"err":    err,
-			}).Fatal("Couldn't close db file!")
+				"dsn": dbDSN,
+				"err": err,
+			}).Fatal("Couldn't close db connection!")
 		}
 	}(db)
 
+	log.Debug("Database Ping")
+	if err := db.Ping(); err != nil {
+		log.WithFields(log.Fields{
+			"dsn": dbDSN,
+			"err": err,
+		}).Fatal("Couldn't ping db!")
+	}
+
 	// create table if it doesn't exist already
-	sqlCreate := `
+	log.Debug("Database Creation (if needed)")
+	sqlCreateClients := `
 		CREATE TABLE IF NOT EXISTS clients (
-			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			timestamp DATE DEFAULT (datetime('now','utc')),
+			id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+			timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			apmac TEXT,
 			clientip TEXT,
 			clientmac TEXT,
@@ -107,65 +128,71 @@ func main() {
 			clientrecv INTEGER,
 			clientsent INTEGER
 		);
+	`
+	if _, err := db.Exec(sqlCreateClients); err != nil {
+		log.WithFields(log.Fields{
+			"table": "clients",
+			"err":   err,
+		}).Fatal("Couldn't create table in db!")
+	}
+	sqlCreateAPs := `
 		CREATE TABLE IF NOT EXISTS aps (
-			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			timestamp DATE DEFAULT (datetime('now','utc')),
+			id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+			timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			apmac TEXT,
 			apname TEXT,
 			apchannel24 INTEGER,
 			apchannel5 INTEGER
 		);
 	`
-	log.Debug("Database Creation (if needed)")
-	if _, err := db.Exec(sqlCreate); err != nil {
+	if _, err := db.Exec(sqlCreateAPs); err != nil {
 		log.WithFields(log.Fields{
-			"dbFile": *dbFile,
-			"err":    err,
-		}).Fatal("Couldn't create tables in sqlite3 db!")
+			"table": "aps",
+			"err":   err,
+		}).Fatal("Couldn't create table in db!")
 	}
 
 	log.Debug("Database Prepared Statement Loading")
 	dbStmtClient, err := db.Prepare("INSERT INTO clients(timestamp, apmac, clientip, clientmac, clientssid, clientuser, clientproto, clientrssi, clientsnr, clientrecv, clientsent) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
-			"dbFile": *dbFile,
-			"err":    err,
-			"table":  "clients",
+			"err":   err,
+			"table": "clients",
 		}).Fatal("Couldn't prepare sql statement!")
 	}
 	dbStmtAP, err := db.Prepare("INSERT INTO aps(timestamp, apmac, apname, apchannel24, apchannel5) VALUES (?,?,?,?,?)")
 	if err != nil {
 		log.WithFields(log.Fields{
-			"dbFile": *dbFile,
-			"err":    err,
-			"table":  "aps",
+			"err":   err,
+			"table": "aps",
 		}).Fatal("Couldn't prepare sql statement!")
 	}
 
-	log.Debug("SNMP Connecting")
+	log.Debug("SNMP Connection Setup")
 	if err := gosnmp.Default.Connect(); err != nil {
 		log.WithFields(log.Fields{
-			"host":      *host,
-			"community": *community,
-			"timeout":   *timeout,
-			"retries":   *retries,
+			"host":      *snmpHost,
+			"community": *snmpCommunity,
+			"timeout":   *snmpTimeout,
+			"retries":   *snmpRetries,
 			"err":       err,
 		}).Fatal("Couldn't open SNMP socket!")
 	}
 	defer func() {
 		if err := gosnmp.Default.Conn.Close(); err != nil {
 			log.WithFields(log.Fields{
-				"host":      *host,
-				"community": *community,
-				"timeout":   *timeout,
-				"retries":   *retries,
+				"host":      *snmpHost,
+				"community": *snmpCommunity,
+				"timeout":   *snmpTimeout,
+				"retries":   *snmpRetries,
 				"err":       err,
 			}).Fatal("Couldn't close SNMP socket!")
 		}
 	}()
 
 	// run every interval, regardless of whether there is an outstanding request or not
-	ticker := time.NewTicker(*pollInterval)
+	log.Info("Fully setup, starting main loop!")
+	ticker := time.NewTicker(*snmpPollInterval)
 	defer ticker.Stop()
 	var iteration int
 	for timeStartJob := range ticker.C {
@@ -641,8 +668,7 @@ func main() {
 		dbTx, err := db.Begin()
 		if err != nil {
 			iterationLogger.WithFields(log.Fields{
-				"dbFile": *dbFile,
-				"err":    err,
+				"err": err,
 			}).Warn("sql insert failed")
 			return
 		}
@@ -651,8 +677,7 @@ func main() {
 			if err != nil {
 				if !strings.Contains(err.Error(), "sql: Transaction has already been committed or rolled back") {
 					log.WithFields(log.Fields{
-						"dbFile": *dbFile,
-						"err":    err,
+						"err": err,
 					}).Fatal("Couldn't rollback database transaction!")
 				}
 			}
@@ -678,18 +703,16 @@ func main() {
 			)
 			if err != nil {
 				iterationLogger.WithFields(log.Fields{
-					"dbFile": *dbFile,
-					"err":    err,
-					"table":  "clients",
+					"err":   err,
+					"table": "clients",
 				}).Warn("sql insert failed")
 				return
 			}
 			rowsClient, err := res.RowsAffected()
 			if err != nil {
 				iterationLogger.WithFields(log.Fields{
-					"dbFile": *dbFile,
-					"err":    err,
-					"table":  "clients",
+					"err":   err,
+					"table": "clients",
 				}).Warn("sql counting failed")
 			} else {
 				rows += int(rowsClient)
@@ -707,18 +730,16 @@ func main() {
 			)
 			if err != nil {
 				iterationLogger.WithFields(log.Fields{
-					"dbFile": *dbFile,
-					"err":    err,
-					"table":  "aps",
+					"err":   err,
+					"table": "aps",
 				}).Warn("sql insert failed")
 				return
 			}
 			rowsAP, err := res.RowsAffected()
 			if err != nil {
 				iterationLogger.WithFields(log.Fields{
-					"dbFile": *dbFile,
-					"err":    err,
-					"table":  "aps",
+					"err":   err,
+					"table": "aps",
 				}).Warn("sql counting failed")
 			} else {
 				rows += int(rowsAP)
