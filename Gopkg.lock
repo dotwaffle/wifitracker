@@ -1,4 +1,4 @@
-memo = "71fcc02f22aed98db1b0e05fc457d4261aff6319565bf0e434cb82cec80ccf62"
+memo = "74419c48e775a2106dc673a1bd028bc4347f8f017a85aea48652c9692584a4d8"
 
 [[projects]]
   name = "github.com/Sirupsen/logrus"
@@ -7,9 +7,10 @@ memo = "71fcc02f22aed98db1b0e05fc457d4261aff6319565bf0e434cb82cec80ccf62"
   version = "v0.11.5"
 
 [[projects]]
+  branch = "master"
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "c775fbc0c7ce5256db87cc1645d60147dbb7ca1c"
+  revision = "147bd02c2c516cf9a8878cb75898ee8a9eea0228"
 
 [[projects]]
   name = "github.com/namsral/flag"
@@ -21,10 +22,10 @@ memo = "71fcc02f22aed98db1b0e05fc457d4261aff6319565bf0e434cb82cec80ccf62"
   branch = "master"
   name = "github.com/soniah/gosnmp"
   packages = ["."]
-  revision = "cfe685e0bca91d7bc4a95eab3d1faddf66b32e02"
+  revision = "60bf4ae2e262f0e17c004a31712f63913559d4ec"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "9f30dcbe5be197894515a338a9bda9253567ea8f"
+  revision = "9ccfe848b9db8435a24c424abbc07a921adf1df5"
