@@ -49,7 +49,7 @@ snmpcommunity=cheese
 debug=true
 ```
 
-While not strictly necessary, you use `key=value` syntax, which makes using the same file for using environment variables when using Docker much easier. Speaking of which...
+If you plan on using the configuration file format as a Docker env-file, be prepared for the fact that in an env-file all the variable keys should be UPPERCASE, whereas in the configuration file they should be lowercase. I should probably fix that sometime.
 
 ## Docker
 
@@ -58,14 +58,25 @@ For those of you with a Docker persuasion, the latest version is always publishe
 Dealing with flags and configuration files in Docker is surprisingly annoying, so in a fit of both rage and madness I decided to encourage you to follow Kelsey Hightower's example, and the example of the [12 Fractured Apps](https://medium.com/@kelseyhightower/12-fractured-apps-1080c73d481c) by using environment variables, by writing your own Dockerfile that uses `FROM dotwaffle/wifitracker:latest` or by doing something at run-time like:
 
 ```
-docker run -dt --name wifitracker --rm -e SNMPCOMMUNITY=cheese -e DEBUG=true dotwaffle/wifitracker
+$ docker run -dt --name wifitracker --rm -e SNMPCOMMUNITY=cheese -e DEBUG=true dotwaffle/wifitracker
 ```
 
 You can even use your configuration file as an environment variable list!
 
 ```
-docker run -dt --name wifitracker --rm --env-file wifitracker.conf dotwaffle/wifitracker
+$ docker run -dt --name wifitracker --rm --env-file wifitracker.conf dotwaffle/wifitracker
 ```
+
+If you're being super-smart and using Docker swarm, you can even use the Docker "secrets" functionality:
+
+```
+$ cat wifitracker.conf | docker secret create wifitracker.conf -
+rbkdu2zuekxq8mc7pkvfhasyp
+$ docker service create --replicas 1 --name wifitracker --secret="wifitracker.conf" -e "CONFIG=/run/secrets/wifitracker.conf" dotwaffle/wifitracker
+v26mkzdhibja655n0qszawmyk
+```
+
+Using the secrets functionality will allow nosey parkers to stop reading your precious MySQL password strings.
 
 Final note: You'll notice that I've specified `docker run -d` which detaches the process. You can watch the progress with `docker logs --follow wifitracker`, you can attach to it with `docker attach wifitracker` (detach again with ^p^q) or you can start it and immediately attach by changing the run parameter to `docker run -it` for interactive.
 
