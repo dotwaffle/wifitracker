@@ -1,5 +1,5 @@
 SELECT
-	DATETIME(c.timestamp) as timestamp,
+	c.timestamp as timestamp,
 	c.clientip as ip,
 	a.apname as ap,
 	c.clientssid as ssid,
