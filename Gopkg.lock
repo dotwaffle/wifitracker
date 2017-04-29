@@ -1,4 +1,4 @@
-memo = "efcb5119ac7dbdb2812903d0257ad0dc7bc3fee4a5d2f1931c83da324c8a58c6"
+memo = "71fcc02f22aed98db1b0e05fc457d4261aff6319565bf0e434cb82cec80ccf62"
 
 [[projects]]
   name = "github.com/Sirupsen/logrus"
@@ -9,8 +9,7 @@ memo = "efcb5119ac7dbdb2812903d0257ad0dc7bc3fee4a5d2f1931c83da324c8a58c6"
 [[projects]]
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "a0583e0143b1624142adab07e0e97fe106d99561"
-  version = "v1.3"
+  revision = "c775fbc0c7ce5256db87cc1645d60147dbb7ca1c"
 
 [[projects]]
   name = "github.com/namsral/flag"
