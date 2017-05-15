@@ -1,4 +1,5 @@
 FROM golang:alpine
+MAINTAINER matthew@walster.org
 LABEL maintainer "matthew@walster.org"
 RUN mkdir -p /go/src/wifitracker
 COPY . /go/src/wifitracker
