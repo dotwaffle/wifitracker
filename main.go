@@ -81,7 +81,7 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	// get a db connection, sqlite3 for now because I'm lazy
+	// get a db connection
 	log.Debug("Database Setup")
 	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s?tls=%s",
 		*sqlUser,
@@ -206,7 +206,6 @@ func main() {
 		}).Debug("Starting new collection job")
 
 		// block, no point in having multiple collections running at the same time
-		// plus, go-sqlite3 strongly recommends aginst concurrency in writing...
 
 		// start counting for time statistics
 		timeStartCollect := time.Now()
