@@ -5,35 +5,47 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "5e5dc898656f695e2a086b8e12559febbfc01562"
+  revision = "f4ee69125072b22721efbe639bd0da9c9d19b8cc"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "ae5a66df4d33ba404d639bd0fc9189cd5ee79bcf"
+  revision = "02eb68a684ce8ccb467a8280c5b51232d44643b9"
 
 [[projects]]
+  branch = "master"
   name = "github.com/namsral/flag"
   packages = ["."]
-  revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
-  version = "v1.7.4-pre"
+  revision = "67f268f20922975c067ed799e4be6bacf152208c"
 
 [[projects]]
   branch = "master"
   name = "github.com/soniah/gosnmp"
   packages = ["."]
-  revision = "60bf4ae2e262f0e17c004a31712f63913559d4ec"
+  revision = "f15472a4cd6f6ea7929e4c7d9f163c49f059924f"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "9ccfe848b9db8435a24c424abbc07a921adf1df5"
+  packages = ["unix","windows"]
+  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = ["cloudsql"]
+  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
+  version = "v1.0.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2d36d7be7f51e0e5fa8221a761011b5f73cd56976ca0f6e210be7c5ea79f446a"
+  inputs-digest = "fa3de7d79a0ef7c1cb078e3bd52985f12b3aa8edfa7921266f6318b83ebd6e5a"
   solver-name = "gps-cdcl"
   solver-version = 1

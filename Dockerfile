@@ -2,10 +2,10 @@ FROM golang:alpine as build
 MAINTAINER matthew@walster.org
 LABEL maintainer "matthew@walster.org"
 RUN apk add --no-cache git
-RUN go get -u -x github.com/golang/dep/...
-RUN mkdir -p /go/src/wifitracker
-WORKDIR /go/src/wifitracker/
-COPY . /go/src/wifitracker
+RUN go get -u -x github.com/golang/dep/cmd/dep
+RUN mkdir -p /go/src/github.com/dotwaffle/wifitracker
+WORKDIR /go/src/github.com/dotwaffle/wifitracker/
+COPY . /go/src/github.com/dotwaffle/wifitracker
 RUN dep ensure -v
 RUN go install -v
 
