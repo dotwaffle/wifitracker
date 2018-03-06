@@ -75,7 +75,7 @@ func main() {
 	gosnmp.Default.Timeout = *snmpTimeout
 	gosnmp.Default.Retries = *snmpRetries
 
-	if *debug == true {
+	if *debug {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
@@ -223,7 +223,7 @@ func main() {
 					"Iteration": iteration,
 					"oid":       oid,
 					"err":       err,
-					"duration":  time.Now().Sub(timeStartWalk),
+					"duration":  time.Since(timeStartWalk),
 				}).Error("Walking SNMP did not come back cleanly!")
 			}
 			results = append(results, result...)
@@ -231,7 +231,7 @@ func main() {
 		// how long did the SNMP querying take?
 		iterationLogger.WithFields(log.Fields{
 			"results":  len(results),
-			"duration": time.Now().Sub(timeStartCollect),
+			"duration": time.Since(timeStartCollect),
 		}).Debug("SNMP Collection Completed")
 
 		// parse the SNMP results, sort them into client uuid buckets
@@ -750,19 +750,19 @@ func main() {
 		// commit the transaction, writing everything out to the db
 		if err := dbTx.Commit(); err != nil {
 			iterationLogger.WithFields(log.Fields{
-				"duration": time.Now().Sub(timeStartInsert),
+				"duration": time.Since(timeStartInsert),
 			}).Debug("Database inserts failed")
 		}
 
 		// how long did the DB work take?
 		iterationLogger.WithFields(log.Fields{
 			"rows":     rows,
-			"duration": time.Now().Sub(timeStartInsert),
+			"duration": time.Since(timeStartInsert),
 		}).Debug("Database inserts completed")
 
 		// how long did everything take?
 		iterationLogger.WithFields(log.Fields{
-			"duration": time.Now().Sub(timeStartJob),
+			"duration": time.Since(timeStartJob),
 		}).Info("Collection complete")
 	}
 
