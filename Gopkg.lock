@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "f4ee69125072b22721efbe639bd0da9c9d19b8cc"
+  revision = "0dad3b6953e73d351ec8ebfd8a8c6b088d320381"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "02eb68a684ce8ccb467a8280c5b51232d44643b9"
+  revision = "3287d94d4c6a48a63e16fffaabf27ab20203af2a"
 
 [[projects]]
   branch = "master"
@@ -23,19 +23,22 @@
   branch = "master"
   name = "github.com/soniah/gosnmp"
   packages = ["."]
-  revision = "f15472a4cd6f6ea7929e4c7d9f163c49f059924f"
+  revision = "bcf840db66be7d64bf96c3c0e075c92e3d98f793"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
+  revision = "1a580b3eff7814fc9b40602fd35256c63b50f491"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 
 [[projects]]
   name = "google.golang.org/appengine"
